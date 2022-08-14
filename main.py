@@ -104,7 +104,6 @@ async def next_mission(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     split = query.data.split(':::')
-    print(split)
     banner_id = split[0]
     mission_number = split[1]
     mission_number = str(int(mission_number) + 1)
@@ -114,10 +113,9 @@ async def next_mission(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                        text='Bannergress did not like that mission. Please report the mission to @M1chaeI so he can investigate.')
     else:
         j = resp.json()
-        print(j[0])
         mission_details = j[0]
-        total_number_of_missions_in_banner = mission_details['numberOfMissions']
-        if int(mission_number) > int(total_number_of_missions_in_banner):
+        total_number_of_missions = mission_details['numberOfMissions']
+        if int(mission_number) > int(total_number_of_missions):
             await query.edit_message_text(
                 text='Looks like you completed the banner. Congrats! Don\'t forget to mark it Done on Bannergress!\n\n'
                      'https://bannergress.com/banner/' + mission_details['id'])
