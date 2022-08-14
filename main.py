@@ -47,6 +47,21 @@ async def first_mission(update: Update, context: ContextTypes.DEFAULT_TYPE):
             j = resp.json()
             mission_details = j[0]
     else:
+        for potentiallink in update.message.entities:
+            if not potentiallink['url']:
+                continue
+            else:
+                if 'https://bannergress.com/banner/' in potentiallink:
+                    banner_id = potentiallink.replace('https://bannergress.com/banner/', '')
+                    resp = requests.get('https://api.bannergress.com/bnrs/' + banner_id)
+                    if resp.status_code is not 200:
+                        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                                       text='Bannergress did not like that mission. Please report the mission to @M1chaeI so he can investigate.')
+                        return
+                    else:
+                        mission_details = resp.json()
+                        banner_id = mission_details['missions']['0']['id']
+                        break
         await context.bot.send_message(chat_id=update.effective_chat.id, text='That is not a correct link. Please '
                                                                               'share the mission link from the '
                                                                               'mission overview or a Bannergress link.')
