@@ -17,8 +17,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text='Yo just share a banner link')
 
 
-def get_mission_url(mission_id, mission_number):
-    resp = requests.get("https://api.bannergress.com/bnrs/" + str(mission_id))
+def get_mission_url(bannergress_mission_id, mission_number):
+    resp = requests.get("https://api.bannergress.com/bnrs/" + str(bannergress_mission_id))
+    print(resp)
     j = resp.json()
     all_missions = j['missions']
     active_mission = all_missions[str(int(mission_number) - 1)]
@@ -39,7 +40,7 @@ def parse_first_message(update: Update):
                             'URL or contact @M1chaeI if you think this is a bug, so it can be investigated.')
         else:
             bannergress_banner_json = bannergress_banner.json()
-            return bannergress_banner_json['title'], bannergress_banner_json['numberOfMissions'], \
+            return bannergress_banner_json['title'], bannergress_banner_json['id'], bannergress_banner_json['numberOfMissions'], \
                    bannergress_banner_json['missions']['0']['id']
     # The message is a link shared from the Ingress scanner
     elif 'https://link.ingress.com/?link=' in message:
@@ -51,7 +52,7 @@ def parse_first_message(update: Update):
                 'contact @M1chaeI if you think this is a bug, so it can be investigated.')
         else:
             bannergress_mission = resp.json()[0]
-            return bannergress_mission['title'], bannergress_mission['numberOfMissions'], niantic_first_mission_id
+            return bannergress_mission['title'], bannergress_mission['id'], bannergress_mission['numberOfMissions'], niantic_first_mission_id
     # The message might contain a link to a banner somewhere in the message
     else:
         for entity in update.message.entities:
@@ -70,7 +71,7 @@ def parse_first_message(update: Update):
                     else:
                         bannergress_banner = bannergress_banner.json()
                         niantic_first_mission_id = bannergress_banner['missions']['0']['id']
-                        break
+                        return bannergress_banner['title'], bannergress_banner['id'], bannergress_banner['numberOfMissions'], niantic_first_mission_id
 
     raise Exception('It looks like your message did not contain a Bannergress link or a mission link sent from the'
                     'Ingress scanner. Please double-check your URL or contact @M1chaeI if you think this is a bug, so'
@@ -79,18 +80,19 @@ def parse_first_message(update: Update):
 
 async def first_mission(update: Update, context: ContextTypes.DEFAULT_TYPE):
     title = ''
+    bannergress_id = ''
     total_number_of_missions = 0
     niantic_first_mission_id = ''
 
     try:
-        title, total_number_of_missions, niantic_first_mission_id = parse_first_message(update)
+        title, bannergress_id, total_number_of_missions, niantic_first_mission_id = parse_first_message(update)
     except Exception as e:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text=str(e))
         return
 
     reply_keyboard = [
-        [InlineKeyboardButton('Open in Scanner', url=get_mission_url(niantic_first_mission_id, "1"))],
+        [InlineKeyboardButton('Open in Scanner', url=get_mission_url(bannergress_id, "1"))],
         [InlineKeyboardButton('Next mission', callback_data=niantic_first_mission_id + ':::1')],
     ]
     await update.message.reply_text(
