@@ -19,7 +19,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def get_mission_url(bannergress_mission_id, mission_number):
     resp = requests.get("https://api.bannergress.com/bnrs/" + str(bannergress_mission_id))
-    print(resp)
     j = resp.json()
     all_missions = j['missions']
     active_mission = all_missions[str(int(mission_number) - 1)]
