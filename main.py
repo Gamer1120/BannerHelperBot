@@ -10,8 +10,12 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+TELEGRAM_RESERVED_CHARACTERS = {"_": r"\_", "*": r"\*", "[": r"\[", "]": r"\]", "(": r"\(", ")": r"\)", "~": r"\~", "`": r"\`", ">": r"\>", "#": r"\#", "+": r"\+", "-": r"\-", "=": r"\=", "|": r"\|", "{": r"\{", "}": r"\}", ".": r"\.", "!": r"\!", }
+
 TELEGRAM_ACCESS_TOKEN = ''
 
+def fix_reserved_characters(message):
+    return message.translate(str.maketrans(TELEGRAM_RESERVED_CHARACTERS))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text='Yo just share a banner link')
@@ -43,6 +47,17 @@ def parse_first_message(update: Update):
                    bannergress_banner_json['missions']['0']['id']
     # The message is a link shared from the Ingress scanner
     elif 'https://link.ingress.com/?link=' in message:
+        niantic_first_mission_id = str(message[-35:])
+        resp = requests.get('https://api.bannergress.com/bnrs?missionId=' + niantic_first_mission_id)
+        if resp.status_code is not 200:
+            raise Exception(
+                'It looks like you are not sharing a correct URL from within Ingress. Please double-check your URL or '
+                'contact @M1chaeI if you think this is a bug, so it can be investigated.')
+        else:
+            bannergress_mission = resp.json()[0]
+            return bannergress_mission['title'], bannergress_mission['id'], bannergress_mission['numberOfMissions'], niantic_first_mission_id
+    # The message is an Intel link to a mission
+    elif 'https://intel.ingress.com/mission/' in message:
         niantic_first_mission_id = str(message[-35:])
         resp = requests.get('https://api.bannergress.com/bnrs?missionId=' + niantic_first_mission_id)
         if resp.status_code is not 200:
@@ -87,7 +102,7 @@ async def first_mission(update: Update, context: ContextTypes.DEFAULT_TYPE):
         title, bannergress_id, total_number_of_missions, niantic_first_mission_id = parse_first_message(update)
     except Exception as e:
         await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text=str(e))
+                                       text=fix_reserved_characters(str(e)))
         return
 
     reply_keyboard = [
@@ -95,7 +110,7 @@ async def first_mission(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton('Next mission', callback_data=niantic_first_mission_id + ':::1')],
     ]
     await update.message.reply_text(
-        title + "\n\nYou are currently on mission: 1 of " + str(total_number_of_missions) + "\n\n",
+        fix_reserved_characters(title) + "\n\nYou are currently on mission: 1 of " + str(total_number_of_missions) + "\n\n",
         reply_markup=InlineKeyboardMarkup(reply_keyboard),
         parse_mode=ParseMode.MARKDOWN_V2
     )
@@ -130,7 +145,7 @@ async def next_mission(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
 
             await query.edit_message_text(
-                str(mission_details['title']) + "\n\n"
+                fix_reserved_characters(str(mission_details['title'])) + "\n\n"
                                                 "You are currently on mission: " + mission_number + " of " + str(
                     mission_details['numberOfMissions']) + "\n\n",
                 reply_markup=InlineKeyboardMarkup(reply_keyboard),
