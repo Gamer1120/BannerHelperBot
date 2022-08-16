@@ -30,7 +30,7 @@ def get_mission_url(bannergress_mission_id, mission_number):
     return "https://link.ingress.com/?link=https%3a%2f%2fintel.ingress.com%2fmission%2f" + active_mission_id + "&apn=com.nianticproject.ingress&isi=576505181&ibi=com.google.ingress&ifl=https%3a%2f%2fapps.apple.com%2fapp%2fingress%2fid576505181&ofl=https%3a%2f%2fintel.ingress.com%2fmission%2f" + active_mission_id + ""
 
 
-# Gets an Update and returns a title, total number of missions as string and the Niantic ID of the first mission
+# Gets an Update and returns a title, the Bannergress ID, the total number of missions as string and the Niantic ID of the first mission
 def parse_first_message(update: Update):
     message = update.message.text
 
